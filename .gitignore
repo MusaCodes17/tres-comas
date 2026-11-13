@@ -1,0 +1,36 @@
+# Secrets (INV-3): only *.example templates are tracked
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Live data and backups — the ledger never lives in the repo
+*.db
+*.db-*
+*.db.bak*
+*.sqlite*
+data/
+tres-comas-data/
+
+# Real broker exports contain private financial data. Only synthetic
+# fixtures under backend/tests/fixtures/ may be committed.
+*.csv
+*.xlsx
+*.pdf
+!backend/tests/fixtures/**/*.csv
+uploads/
+
+# Python / Node
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+dist/
+
+# Local tooling
+.DS_Store
+.claude/settings.local.json
+.claude/hooks/.state/
+.playwright-mcp/
