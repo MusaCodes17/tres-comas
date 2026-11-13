@@ -2,6 +2,7 @@
 
 from app.models.models import (
     Account,
+    AuthSession,
     EtfConstituent,
     FxRate,
     ImportBatch,
@@ -16,6 +17,7 @@ from app.models.types import DecimalText
 
 __all__ = [
     "Account",
+    "AuthSession",
     "Connection",
     "DecimalText",
     "EtfConstituent",

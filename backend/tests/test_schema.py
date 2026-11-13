@@ -84,7 +84,8 @@ def _table_names(engine) -> set[str]:
 
 
 def test_upgrade_creates_the_ten_tables(db):
-    assert _table_names(db) == TABLES
+    # auth_sessions (T4, migration 0002) is the one non-ledger table.
+    assert _table_names(db) == TABLES | {"auth_sessions"}
 
 
 def test_migration_matches_models(db):

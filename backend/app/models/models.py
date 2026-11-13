@@ -336,3 +336,25 @@ class OutboundLog(Base):
     # JSON list of tickers: never quantities, values or account data (INV-4).
     tickers_sent: Mapped[str] = mapped_column(Text, nullable=False, default="[]", server_default="[]")
     succeeded: Mapped[bool | None] = mapped_column(Boolean)
+
+
+class AuthSession(Base):
+    """A server-side login session for the single user (P-5, INV-3).
+
+    Only the sha256 hex of the session token is stored, never the raw token, so
+    a leaked database cannot be replayed as a cookie. Sessions are revocable
+    (``revoked_at``) and slide forward while in use. All datetimes are naive UTC.
+    Not part of the ledger: no money, no account data.
+    """
+
+    __tablename__ = "auth_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    user_agent: Mapped[str | None] = mapped_column(String(256))

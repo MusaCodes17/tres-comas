@@ -42,6 +42,9 @@ Lifecycle: a new decision gets the next D-number. Reversing one moves it to **Su
 | D-20 | The ledger refuses, at write time, any new row, void or replacement that would make a position negative on any date (it replays the affected account × security first). Derivation raises if it ever meets one. (Musa, T3.) | Back-dated entries can't silently break later sells; derived views never show negative holdings. |
 | D-21 | Positions are securities only in v1; cash balances are not derived. (Musa, T3.) | D-5: nothing built ahead of need. Revisit in T9/T10 if the holdings report or portfolio view needs cash. |
 | D-22 | Position-affecting rows must be in the security's currency, and one position never mixes currencies. A `natural_key` is unique across all rows, voided ones included, and the ledger checks it before writing. (T3.) | Keeps cost in one native currency. **T5 check:** if Wealthsimple reports CAD amounts for USD stocks, decide how to carry FX before importing. A corrected import row needs a new key. |
+| D-23 | The app's own login is a single password. Its scrypt hash (`scrypt$n$r$p$salt$hash`, stdlib only) lives only in the production `.env` as `TRES_COMAS_PASSWORD_HASH`, made with `backend/hash_password.py`; unset means login answers 503, never an open app. Sessions are server-side rows in `auth_sessions` (sha256 of the token only) behind an HttpOnly, Secure, SameSite=Strict `tc_session` cookie. Every route is default-deny via an app-level dependency; only `/health` and `/api/auth/login` are public, and the OpenAPI/docs routes are off. Five failed logins in 15 minutes give 429. (Was P-5; Musa, T4.) | Mirrors Anton without new dependencies. A stolen database yields no usable cookie, and sessions can be revoked. MCP bearer tokens (`read` / `read+propose`) are built in T11. |
+| D-24 | Sessions last 30 days, sliding: a request more than an hour after the last one extends expiry and re-issues the cookie. Log out and log out everywhere revoke. (Musa, T4.) | The phone PWA stays signed in; any session can still be killed. |
+| D-25 | Accounts can be created and edited (nickname, type, broker label) but not deleted in v1; base currency is fixed at creation. The API has no DELETE route anywhere. (Musa, T4.) | History stays complete; RESTRICT foreign keys would block most deletes anyway. |
 
 **Naming.** The project and repo are Tres Comas. "Son of Anton" is the umbrella for all of Musa's AI tools; each tool takes a name from the same show.
 
@@ -51,7 +54,6 @@ Lifecycle: a new decision gets the next D-number. Reversing one moves it to **Su
 | --- | --- | --- | --- |
 | P-2 | Which market-data provider for prices (TSX + US)? Musa asked to look at providers within the Canadian market first. | Run the D-14 spike: shortlist 2–3, test all nine tickers + VGRO/XEQT/XGRO holdings, record results in `docs/spikes/price_provider.md`, then decide. | T7 |
 | P-3 | Natural key for Wealthsimple activity-row dedup. The column `transactions.natural_key` (unique, nullable) exists since T2; its contents are still to decide. | Hash of (account, trade date, type, security, quantity, net amount, currency) plus the file hash on `import_batch`; confirm against a real export's columns during T5. | T5 |
-| P-5 | Auth mechanism for the PWA's own login (D-10). | Mirror Anton: single-user password + session cookie, default-deny middleware, named bearer tokens for MCP with `read` / `read+propose` scope. Confirm with Musa (auth-related). | T4 |
 
 ## D. Superseded
 

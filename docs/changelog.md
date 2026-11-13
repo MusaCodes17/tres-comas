@@ -4,6 +4,38 @@
 
 ---
 
+## T4: auth, accounts and the manual-entry PWA — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate` as three workers in sequence: T4a (sonnet/high) did auth and sessions, T4b (sonnet/medium) the REST API, T4c (sonnet/medium) the PWA screens. Each diff was reviewed and accepted first time. Musa decided P-5: a password with server-side sessions, 30 days sliding, and no account delete.
+
+**[ADDED]**
+- Auth (D-23, D-24):
+  - `app/services/auth.py`: scrypt verify against `TRES_COMAS_PASSWORD_HASH`, sessions stored as a sha256 of the token, sliding expiry, and the login throttle.
+  - `app/routers/auth.py`: login, logout, logout-all, me.
+  - `app/routers/deps.py`: app-wide `require_session` (default deny) and `service_errors`.
+  - Migration `0002` (`auth_sessions`) and `backend/hash_password.py`.
+- API (D-25): `app/schemas/` (extra fields forbidden, decimals as strings, `dec_str`), `services/accounts.py`, `services/securities.py`, and routers for accounts, securities, transactions (create, void, replace) and positions. There is no DELETE route.
+- PWA:
+  - Login, Accounts and AccountDetail pages.
+  - Positions, transaction form and list, and security form.
+  - `lib/format.js`: string-only rounding.
+  - A global 401 handler that sends you back to Login.
+- Env examples gain `TRES_COMAS_PASSWORD_HASH` and `TRES_COMAS_COOKIE_SECURE` (names only), replacing the old plain-password and session-secret placeholders.
+- Decisions D-23 to D-25; P-5 retired. MCP tokens are left to T11.
+
+**[CHANGED]** `test_schema.py::test_upgrade_creates_the_ten_tables` now expects `auth_sessions` as well.
+
+**[VERIFIED]**
+- Backend suite 215 passed (was 166), including:
+  - `test_auth_default_deny_every_route`, which sweeps every route;
+  - `test_f1_manual_entry_via_api_nine_positions`;
+  - the invariant tests `test_inv2_no_position_write_endpoint`, `test_inv3_password_hash_never_returned`, `test_inv6_api_cannot_set_source_or_proposal`, `test_inv8_api_rejects_account_number` and `test_inv9_api_rejects_json_numbers`.
+- Hook tests 16 passed, and `alembic check` is clean after 0002.
+- `vite build` is clean, and `formatDecimal` passed seven edge cases.
+- A Playwright smoke test at 390×844 against the real backend covered a wrong password, login, creating an account, adding a security and a buy, the position showing 10.5000, and logout. **Not exercised in a browser:** void, correct, the oversell message and session expiry. All four are covered by backend tests.
+
+---
+
 ## T3: ledger write path and position derivation — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: T3a (sonnet/high) wrote position derivation and T3b (sonnet/high) the ledger writer. Both diffs were reviewed and accepted first time, and an invariant review was run on the task. Musa decided P-4 (weighted average cost), that oversells are refused at write time, and that positions cover securities only in v1.

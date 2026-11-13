@@ -8,6 +8,7 @@
   --color-fg: 226 232 240;    /* slate-200 */
   --color-muted: 148 163 184; /* slate-400 */
   --color-accent: 56 189 248; /* sky-400 */
+  --color-danger: 248 113 113; /* red-400 */
   color-scheme: dark;
 }
 

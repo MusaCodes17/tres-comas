@@ -74,11 +74,15 @@ Ten tables. The ledger is `account`, `security`, `transaction`; the rest is mark
 
 Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `AAA_BBB`. Foreign keys are enforced (`PRAGMA foreign_keys=ON`) and all use `RESTRICT`. `transactions` is append-only by trigger (D-16). `connections.enabled` defaults to false (D-17).
 
+**Auth (T4, migration `0002`):** `auth_sessions` holds one row per login: `token_hash` (sha256, unique), `last_seen_at`, `expires_at`, `revoked_at`, `user_agent`. The raw token exists only in the cookie (D-23).
+
 ## 5. Services Layer
 
 | Service | Job | Task |
 | --- | --- | --- |
 | `ledger` | Validate and record transactions; void and replace. Sole writer; refuses changes that would go negative (D-20). Built: `record_transaction`, `void_transaction`, `void_and_replace`. | T3 |
+| `auth` | Password verify (scrypt hash from env), server-side sessions with 30-day sliding expiry, login throttle (D-23, D-24). | T4 |
+| `accounts`, `securities` | Create, list, edit; duplicates and unknown ids refused; no delete (D-25). Tickers and exchanges uppercased. | T4 |
 | `positions` | Derive quantity, total cost, average cost and realised gain per account × security from non-voided transactions, in (trade_date, id) order (D-19). Built: `derive`, `get_positions`, `get_position`. | T3 |
 | `importers.*` | Parse a broker file into normalized rows; never write. `wealthsimple` first. | T5, T10 |
 | `connections` | Registry CRUD, enabled/scope checks, outbound HTTP, `outbound_log`. | T6 |
@@ -90,7 +94,7 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 
 ## 6. Request Flows
 
-- **Manual entry (F1):** form → `POST /api/transactions` → `ledger.record_transaction(source="manual")` → positions re-derived on read.
+- **Manual entry (F1):** PWA form → `POST /api/accounts/{id}/transactions` → `ledger.record_transaction(source="manual")` → positions re-derived on read (`GET /api/accounts/{id}/positions`). Corrections: `POST /api/transactions/{id}/void` and `/replace`. Request bodies forbid unknown fields and take decimals as strings only.
 - **CSV import (F2):** upload → `import_batch` by file hash (duplicate file = no-op) → adapter parses → dedup on natural key (P-3) → `ledger.record_transaction(source="import")` per new row, one DB transaction per batch.
 - **Price/FX poll (F3):** scheduler → for each held security, `connections.call("prices", tickers=[...])`; `connections.call("boc_valet", series=["FXUSDCAD"])` → `price`, `fx_rate` rows.
 - **Look-through (F4):** positions × latest price × FX → per-ETF `etf_constituent` (level 1) → constituents that are themselves ETFs unpacked again (level 2) → aggregated per underlying.
@@ -104,7 +108,7 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 
 ## 8. Authentication & Security Posture
 
-- Auth on every route, including read-only ones; own login, separate from Anton (D-10).
+- Auth on every route, including read-only ones; own login, separate from Anton (D-10). **As built (T4, D-23/D-24):** an app-level `require_session` dependency denies every route except `/health` and `/api/auth/login`; `tc_session` cookie is HttpOnly, Secure, SameSite=Strict; sessions are revocable rows; 5 failed logins per 15 minutes → 429; docs/OpenAPI routes are off.
 - Secrets only in production `.env`; the registry stores env key **names** (INV-3).
 - Outbound rules by kind:
 
@@ -138,7 +142,7 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 1. DNS: an `A`/`AAAA` record for `trescomas.musasouled.com` pointing at the box.
 2. A deploy user that can run `docker compose` without sudo and can write to `/opt/tres-comas` and `/var/www/tres-comas`, with the deploy public key in its `authorized_keys`.
 3. Clone the repo to `/opt/tres-comas`. A private repo needs a read-only deploy key on the box.
-4. Copy `deploy/.env.production.example` to `/opt/tres-comas/.env` and fill in the values by hand (INV-3). Create `~/tres-comas-data` and `/var/www/tres-comas`.
+4. Copy `deploy/.env.production.example` to `/opt/tres-comas/.env` and fill in the values by hand (INV-3). Generate `TRES_COMAS_PASSWORD_HASH` with `python hash_password.py` in `backend/` (on any machine with Python 3.11); without it, login answers 503. Create `~/tres-comas-data` and `/var/www/tres-comas`.
 5. Append `deploy/Caddyfile` to `/etc/caddy/Caddyfile` beside Anton's block and reload Caddy.
 6. Add the four GitHub secrets. The next push to `main` deploys.
 

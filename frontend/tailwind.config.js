@@ -10,6 +10,7 @@ export default {
         fg: "rgb(var(--color-fg) / <alpha-value>)",
         muted: "rgb(var(--color-muted) / <alpha-value>)",
         accent: "rgb(var(--color-accent) / <alpha-value>)",
+        danger: "rgb(var(--color-danger) / <alpha-value>)",
       },
     },
   },
