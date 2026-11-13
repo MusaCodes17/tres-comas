@@ -98,7 +98,7 @@ Placement: business logic → `services/` (never a router, MCP tool, importer or
 - **Outbound call:** `connections.call(name, endpoint, tickers=[...])` — the registry builds the request; callers never assemble URLs with portfolio data.
 
 **Known traps (do not rediscover these)**
-- **SQLite has no decimal type.** SQLAlchemy `Numeric` on SQLite round-trips through float affinity and loses precision. Store decimals as TEXT through a `Decimal` TypeDecorator (or integer minor units) — see `design_decisions.md` P-1. Never `Float`.
+- **SQLite has no decimal type.** SQLAlchemy `Numeric` on SQLite round-trips through float affinity and loses precision. Store decimals as TEXT through a `Decimal` TypeDecorator (or integer minor units) — see `design_decisions.md` D-15. Never `Float`.
 - **Funds of funds.** VGRO, XEQT and XGRO hold other ETFs; look-through is two levels and weights multiply. v1 may cap to top holdings and show the rest as "other" — the remainder must still sum to 100%.
 - **Ticker identity.** `MDA.TO` vs `MDA`, `GOOG` vs `GOOGL`: a security is ticker **plus exchange**. Never match on ticker alone.
 - **FX direction.** Bank of Canada Valet series are quoted as CAD per unit of foreign currency (`FXUSDCAD`). Name pairs `base_quote` and test the direction.

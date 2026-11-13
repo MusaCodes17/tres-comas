@@ -65,7 +65,14 @@ Ten tables. The ledger is `account`, `security`, `transaction`; the rest is mark
 
 **Corrections:** new transactions or a voided-and-replaced pair; history stays auditable.
 
-**Money storage:** see `design_decisions.md` P-1 (decimal as TEXT on SQLite).
+**Money storage:** see `design_decisions.md` D-15 (decimal as TEXT on SQLite).
+
+**As built (T2, migration `0001`, `backend/app/models/models.py`):** table names are plural (`accounts`, `securities`, `transactions`, `prices`, `fx_rates`, `etf_constituents`, `import_batches`, `proposals`, `connections`, `outbound_logs`; D-18). Extra columns beyond the spec's key fields:
+- `securities`: `name` and `sector` (for F4).
+- `transactions`: `split_ratio`, `natural_key` (unique; P-3), `proposal_id`, `voided_at`, `replaces_id`, `note`.
+- `outbound_logs`: `succeeded`.
+
+Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `AAA_BBB`. Foreign keys are enforced (`PRAGMA foreign_keys=ON`) and all use `RESTRICT`. `transactions` is append-only by trigger (D-16). `connections.enabled` defaults to false (D-17).
 
 ## 5. Services Layer
 

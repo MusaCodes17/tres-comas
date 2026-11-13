@@ -10,7 +10,7 @@ description: Use when adding or changing anything that creates, voids or correct
 ## Required context
 - `AGENTS.md` §2, §6 (corrections, known traps), §9.
 - `docs/v1_spec.md` §Data model (transaction types, derived values, corrections).
-- `docs/design_decisions.md` P-1 (decimal storage), P-4 (average cost).
+- `docs/design_decisions.md` D-15 (decimal storage), P-4 (average cost).
 
 ## Rules
 1. **One writer.** Every transaction is born in `services/ledger.record_transaction(session, *, account_id, security_id, type, quantity, price, amount, currency, trade_date, source, import_batch_id=None)`. Manual entry (`source="manual"`), import (`"import"`) and confirmed proposals (`"proposal"`) all call it. Add a keyword argument; never write `Transaction(...)` anywhere else.

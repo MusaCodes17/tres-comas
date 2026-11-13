@@ -4,6 +4,22 @@
 
 ---
 
+## T2: schema and migrations for the ten tables — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: T2a (haiku/medium) built the decimal type, T2b (sonnet/medium) the models, migration and tests, and a haiku/low worker fixed comments. Every diff was reviewed, and an invariant review was run on the whole task. Musa decided the three open choices: exact-text decimals, append-only enforced in the database, and connections off by default.
+
+**[ADDED]**
+- `app/models/types.py`: `DecimalText`, exact plain-notation TEXT. Refuses float, bool, NaN and infinity (D-15).
+- `app/models/models.py`: the ten models. Plural table names (D-18), CHECK-constrained enums and ISO currency codes, RESTRICT foreign keys, no account-number column.
+- `alembic/versions/0001_initial_schema.py`: all ten tables plus the append-only triggers on `transactions` (D-16). The downgrade drops the triggers, then the tables.
+- `app/database.py`: `PRAGMA foreign_keys=ON` on every SQLite connection.
+- `alembic/env.py`: imports the models; an explicit `cfg.attributes["url"]` overrides `DATABASE_URL` (for tests).
+- Decisions D-15 to D-18; P-1 retired. A debt note: Alembic can't detect drift in CHECK constraints or triggers.
+
+**[VERIFIED]** Backend suite 34 passed (was 2): 16 type tests and 16 schema tests, including every INV-2, INV-8 and INV-9 test now listed in `docs/invariants.md`. `alembic upgrade head` then `alembic check` reports "No new upgrade operations detected". Invariant review: INV-2, 8 and 9 pass; the other six are not touched.
+
+---
+
 ## T1: repo scaffold, CI and push-to-main deploy — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: four workers in parallel, each diff reviewed before acceptance (one was sent back for a wrong comment). Musa confirmed the plan, the domain `trescomas.musasouled.com` and deploying with a GitHub Action over SSH.

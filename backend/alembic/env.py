@@ -19,9 +19,12 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.database import DATABASE_URL, Base  # noqa: E402
+import app.models  # noqa: E402,F401  (register models for autogenerate)
 
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# An explicit URL (cfg.attributes["url"], used by tests) wins; else DATABASE_URL.
+URL = config.attributes.get("url") or DATABASE_URL
+config.set_main_option("sqlalchemy.url", URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name, disable_existing_loggers=False)
@@ -32,7 +35,7 @@ target_metadata = Base.metadata
 def run_migrations_offline() -> None:
     """Emit SQL to stdout without a live database connection."""
     context.configure(
-        url=DATABASE_URL,
+        url=URL,
         target_metadata=target_metadata,
         literal_binds=True,
         render_as_batch=True,
