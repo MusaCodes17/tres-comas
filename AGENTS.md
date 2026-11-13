@@ -2,7 +2,7 @@
 
 **Reference docs** (`docs/`): `v1_spec.md` (the source of truth for v1 scope), `invariants.md` (the nine rules, with owning code and guards), `design_decisions.md` (constraints C-*, decisions D-*, pending P-*), `architecture.md`, `roadmap.md` (features, build plan T1–T11, releases R2–R5), `project_state.md` (what's true now), `changelog.md` (session history; append an entry at the top after every working session), `handover_template.md`. This file is the *stable* guide; the changelog is the *running* history.
 
-**Status:** building v1. T1–T4 done (scaffold, schema, ledger and positions, auth and manual-entry PWA); see `docs/project_state.md` for what is true now.
+**Status:** building v1. T1–T4 and T6 done (scaffold, schema, ledger and positions, auth and manual-entry PWA, connection registry); see `docs/project_state.md` for what is true now.
 
 ---
 

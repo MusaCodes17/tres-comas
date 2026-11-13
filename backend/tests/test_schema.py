@@ -205,7 +205,7 @@ def test_connections_default_disabled(db):
         s.add(Connection(name="prices", kind="market_data", direction="outbound", scope="{}"))
         s.commit()
     with Session(db) as s:
-        assert s.query(Connection).one().enabled is False
+        assert s.query(Connection).filter_by(name="prices").one().enabled is False
 
 
 def test_connection_kind_direction_check(db):

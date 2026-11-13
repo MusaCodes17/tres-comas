@@ -85,7 +85,7 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 | `accounts`, `securities` | Create, list, edit; duplicates and unknown ids refused; no delete (D-25). Tickers and exchanges uppercased. | T4 |
 | `positions` | Derive quantity, total cost, average cost and realised gain per account × security from non-voided transactions, in (trade_date, id) order (D-19). Built: `derive`, `get_positions`, `get_position`. | T3 |
 | `importers.*` | Parse a broker file into normalized rows; never write. `wealthsimple` first. | T5, T10 |
-| `connections` | Registry CRUD, enabled/scope checks, outbound HTTP, `outbound_log`. | T6 |
+| `connections` | Registry CRUD, enabled/scope checks, outbound HTTP, `outbound_log` (D-26–D-28). Built: `registry.py` (`create_connection`, `set_enabled`, `public_view`, `recent_log`), `client.call`. API: `/api/connections` (list, create, PATCH enabled, `/{id}/log`); PWA Connections screen. | T6 |
 | `market_data` | Scheduled price + FX poll through `connections`. | T7 |
 | `exposure` | Two-level look-through by company, sector, currency; top-N + "other". | T8 |
 | `portfolio` | Totals per account and overall in CAD with rate + date. | T9 |
@@ -126,7 +126,7 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 | Integration | Kind | Direction | Secret | Status |
 | --- | --- | --- | --- | --- |
 | Price + ETF holdings provider | market_data | outbound | `.env` key (TBD) | Pending D-14 spike (P-2) |
-| Bank of Canada Valet | market_data (FX) | outbound | none | Decided (D-13) |
+| Bank of Canada Valet | market_data (FX) | outbound | none | Decided (D-13); registry row `boc_valet` seeded disabled (migration 0003) |
 | Anthropic API | llm | outbound | `ANTHROPIC_API_KEY` | Decided (D-4), not in v1 build plan |
 | Claude MCP client | mcp_client | inbound | app-issued token | T11 |
 

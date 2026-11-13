@@ -4,6 +4,42 @@
 
 ---
 
+## T6: connection registry and outbound log — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate` in three parts: T6a (sonnet/high) built the registry and `call()`, T6b (haiku/medium) the REST API, and T6c (haiku/medium) the Connections screen. Every diff was reviewed.
+
+T6a was sent back once because of a fault in my brief. It asked for a broker-host blocklist in code, which the guard hook rightly denies. The worker stopped instead of working around the hook. The blocklist was dropped and INV-1 stays enforced by the kind allowlist, the DB CHECK and the hook (debt note added). T5 was deferred because it needs the real export's header row; Musa decided its dedup key (P-3 → D-29).
+
+**[ADDED]**
+- `app/connections/`:
+  - `errors.py`;
+  - `registry.py` (validated create, always disabled; `set_enabled`; `public_view` with `secret_configured` and no value; `recent_log`);
+  - `client.call`: the single outbound path. It checks enabled, kind, URL and param scope before sending, applies the secret from env at call time, and logs every call made, then commits it (D-26, D-27);
+  - `providers/` (empty until T7).
+- Migration `0003`: `boc_valet` seeded disabled (D-28).
+- `/api/connections`: list, create, PATCH enabled, `/{id}/log`. Request bodies forbid extra fields and the `enabled` field must be a strict bool.
+- PWA Connections screen: an on/off toggle (confirms before switching on), the secret key name with a configured badge, and the log of each call's time, endpoint, tickers and result.
+- Decisions D-26 to D-29; P-3 retired.
+
+**[CHANGED]**
+- `requirements.txt`: `httpx` is now a runtime dependency (comment only).
+- `test_schema.py::test_connections_default_disabled` filters by name, because the seeded row now exists.
+
+**[VERIFIED]**
+- Backend suite: 287 passed (was 215), with no network in any test. New invariant tests:
+  - `test_inv1_no_broker_connection_kinds`;
+  - `test_inv3_registry_never_returns_secret_values`, `test_inv3_secret_never_logged_header` / `_query_param`, `test_inv3_connections_api_never_returns_secret`;
+  - `test_inv4_market_data_payload_is_tickers_only`;
+  - `test_inv7_disabled_connection_makes_no_call`, `test_inv7_every_call_logged`, `test_inv7_new_connection_disabled`.
+- Hook tests: 16 passed.
+- `alembic check` is clean after 0003.
+- `vite build` is clean.
+- Playwright smoke test at 390×844: `boc_valet` shows Disabled, switching it on confirms and then shows Enabled, and the log shows "No calls yet".
+
+**Note:** a T6b worker made one stray tool call that tried to interrupt a session with a made-up ID. It was denied and nothing changed.
+
+---
+
 ## T4: auth, accounts and the manual-entry PWA — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate` as three workers in sequence: T4a (sonnet/high) did auth and sessions, T4b (sonnet/medium) the REST API, T4c (sonnet/medium) the PWA screens. Each diff was reviewed and accepted first time. Musa decided P-5: a password with server-side sessions, 30 days sliding, and no account delete.

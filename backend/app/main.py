@@ -12,6 +12,7 @@ from fastapi import Depends, FastAPI
 
 from app.routers import accounts as accounts_router
 from app.routers import auth as auth_router
+from app.routers import connections as connections_router
 from app.routers import securities as securities_router
 from app.routers import transactions as transactions_router
 from app.routers.deps import require_session
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(accounts_router.router)
     app.include_router(securities_router.router)
     app.include_router(transactions_router.router)
+    app.include_router(connections_router.router)
 
     return app
 

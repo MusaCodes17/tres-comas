@@ -70,6 +70,26 @@ export function useCreateSecurity() {
   });
 }
 
+export function useConnections() {
+  return useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
+}
+
+export function useConnectionLog(id, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: ["connections", id, "log"],
+    queryFn: () => api.connectionLog(id),
+    enabled,
+  });
+}
+
+export function useSetConnectionEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, enabled }) => api.setConnectionEnabled(id, enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["connections"] }),
+  });
+}
+
 export function useTransactions(accountId) {
   return useQuery({
     queryKey: ["transactions", accountId],

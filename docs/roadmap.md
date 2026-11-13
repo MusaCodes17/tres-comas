@@ -20,7 +20,7 @@ Each feature is done when its acceptance check passes as a named test (or record
 
 ## 2. Build Plan
 
-Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1–T4 done; T5 and T6 are unblocked.
+Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1–T4 and T6 done; T5 waits on the export header, and the D-14 spike is unblocked.
 
 | Task | What | Size | Depends on | Invariants touched | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -28,8 +28,8 @@ Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1�
 | T2 | Schema and migrations for the ten tables (decided D-15–D-18) | Small | T1 | INV-2, INV-8, INV-9 | Done 2026-11-13 |
 | T3 | Position derivation and the ledger write path, tests for buys, sells, splits, voids, fractional shares (decided D-19–D-22) | Complex | T2 | INV-2, INV-9 | Done 2026-11-13 |
 | T4 | Auth, account CRUD, manual transaction form (F1) (decided D-23–D-25) | Medium | T3 | INV-2, INV-3, INV-6, INV-8, INV-9 | Done 2026-11-13 |
-| T5 | Importer interface + Wealthsimple activity adapter with dedup (F2) (decide P-3) | Medium | T3 | INV-1, INV-2, INV-8, INV-9 | Not started |
-| T6 | Connection registry and outbound log | Small | T2 | INV-3, INV-4, INV-7 | Not started |
+| T5 | Importer interface + Wealthsimple activity adapter with dedup (F2) (P-3 decided as D-29; needs the export header) | Medium | T3 | INV-1, INV-2, INV-8, INV-9 | Not started |
+| T6 | Connection registry and outbound log (decided D-26–D-28) | Small | T2 | INV-1, INV-3, INV-4, INV-7 | Done 2026-11-13 |
 | — | **Spike (D-14):** 2–3 price providers vs nine tickers + three funds of funds (decide P-2) | Small | T6 | INV-4 | Not started |
 | T7 | Price and FX poller on a schedule, through the registry (F3) | Medium | T6, spike | INV-4, INV-7, INV-9 | Not started |
 | T8 | ETF constituent loader and two-level look-through (F4) | Complex | T7 | INV-4, INV-9 | Not started |

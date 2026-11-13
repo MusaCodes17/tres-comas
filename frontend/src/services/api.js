@@ -76,4 +76,9 @@ export const api = {
 
   listPositions: (accountId, { includeClosed = false } = {}) =>
     request(`/api/accounts/${accountId}/positions?include_closed=${includeClosed ? "true" : "false"}`),
+
+  listConnections: () => request("/api/connections"),
+  setConnectionEnabled: (id, enabled) =>
+    request(`/api/connections/${id}`, { method: "PATCH", body: { enabled } }),
+  connectionLog: (id, limit = 50) => request(`/api/connections/${id}/log?limit=${limit}`),
 };

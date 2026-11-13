@@ -45,6 +45,10 @@ Lifecycle: a new decision gets the next D-number. Reversing one moves it to **Su
 | D-23 | The app's own login is a single password. Its scrypt hash (`scrypt$n$r$p$salt$hash`, stdlib only) lives only in the production `.env` as `TRES_COMAS_PASSWORD_HASH`, made with `backend/hash_password.py`; unset means login answers 503, never an open app. Sessions are server-side rows in `auth_sessions` (sha256 of the token only) behind an HttpOnly, Secure, SameSite=Strict `tc_session` cookie. Every route is default-deny via an app-level dependency; only `/health` and `/api/auth/login` are public, and the OpenAPI/docs routes are off. Five failed logins in 15 minutes give 429. (Was P-5; Musa, T4.) | Mirrors Anton without new dependencies. A stolen database yields no usable cookie, and sessions can be revoked. MCP bearer tokens (`read` / `read+propose`) are built in T11. |
 | D-24 | Sessions last 30 days, sliding: a request more than an hour after the last one extends expiry and re-issues the cookie. Log out and log out everywhere revoke. (Musa, T4.) | The phone PWA stays signed in; any session can still be killed. |
 | D-25 | Accounts can be created and edited (nickname, type, broker label) but not deleted in v1; base currency is fixed at creation. The API has no DELETE route anywhere. (Musa, T4.) | History stays complete; RESTRICT foreign keys would block most deletes anyway. |
+| D-26 | Registry `scope` is JSON `{"hosts": [...], "params": [...], "auth": null \| {"header", "prefix"} \| {"param"}}`. Params must be a subset of the kind's allowlist in code (market_data: tickers, series, start_date, end_date; news: tickers, company_names; llm: tickers, weights, amounts). `connections.call()` is the only outbound path. It refuses a disabled, unconfigured or out-of-scope call before sending (https only, host in scope, no query in the URL, path segments `[A-Za-z0-9._-]`, typed params, and no numbers, Decimals or dicts), reads the secret from env at call time, and logs `scheme://host/path` and the tickers for every call made. News and LLM rows can be registered but not called in v1. (T6.) | INV-4 and INV-7 enforced at one choke point; a secret placed in a query never reaches the log. |
+| D-27 | `connections.call()` commits its own `outbound_logs` row, so a failed call is never lost, and it refuses to run while the session has pending changes. (T6.) | An exception to "the caller owns the commit", made safe by the pending-work check. Callers commit before calling out. |
+| D-28 | `httpx` is a runtime dependency, imported only in `app/connections/`. The `boc_valet` registry row (Bank of Canada Valet, no key) is seeded disabled by migration 0003. (T6.) | Already pinned for tests; the seed follows D-13 and D-17. Musa switches it on in the Connections screen. |
+| D-29 | Import dedup key (F2): `natural_key` is a sha256 of the normalised (account, trade date, type, ticker + exchange, quantity, net amount, currency) plus an occurrence counter within the file, so two identical rows both import. `import_batches.file_hash` makes re-uploading an identical file a no-op. (Was P-3; Musa, decided ahead of T5.) | Overlapping date ranges add zero rows without relying on a broker row ID. |
 
 **Naming.** The project and repo are Tres Comas. "Son of Anton" is the umbrella for all of Musa's AI tools; each tool takes a name from the same show.
 
@@ -53,7 +57,6 @@ Lifecycle: a new decision gets the next D-number. Reversing one moves it to **Su
 | ID | Question | Proposal | Needed by |
 | --- | --- | --- | --- |
 | P-2 | Which market-data provider for prices (TSX + US)? Musa asked to look at providers within the Canadian market first. | Run the D-14 spike: shortlist 2–3, test all nine tickers + VGRO/XEQT/XGRO holdings, record results in `docs/spikes/price_provider.md`, then decide. | T7 |
-| P-3 | Natural key for Wealthsimple activity-row dedup. The column `transactions.natural_key` (unique, nullable) exists since T2; its contents are still to decide. | Hash of (account, trade date, type, security, quantity, net amount, currency) plus the file hash on `import_batch`; confirm against a real export's columns during T5. | T5 |
 
 ## D. Superseded
 
@@ -61,4 +64,5 @@ None yet.
 
 ## E. Debt list
 
+- **Broker blocklist lives in the hook only (T6).** The registry refuses `broker`/`aggregator` kinds (service + DB CHECK) but does not pattern-match hosts. Broker hostnames are kept out of code by the guard hook (`BROKER_HOST_RE`), so a code-level list would trip the guard. Hosts are still limited per row by `scope.hosts`.
 - **Schema drift blind spot (T2).** Alembic autogenerate does not compare CHECK constraints or triggers, so `alembic check` and `test_migration_matches_models` can't see drift there. `tests/test_schema.py` exercises each constraint and trigger by behaviour instead. Keep that true when adding constraints.
