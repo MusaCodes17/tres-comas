@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark slate theme. Values are space-separated RGB triplets consumed by tailwind.config.js. */
+:root {
+  --color-bg: 15 23 42;       /* slate-900 */
+  --color-fg: 226 232 240;    /* slate-200 */
+  --color-muted: 148 163 184; /* slate-400 */
+  --color-accent: 56 189 248; /* sky-400 */
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}

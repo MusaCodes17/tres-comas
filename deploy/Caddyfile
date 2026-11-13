@@ -1,0 +1,88 @@
+# Tres Comas site block. Template only.
+#
+# On the box, append this block to the host's shared /etc/caddy/Caddyfile beside
+# Anton's. The global options block (with the ACME email) already lives there,
+# so do not repeat it here.
+#
+# OAuth paths (/authorize, /token, /revoke, /oauth/login, /.well-known/oauth-*)
+# are NOT proxied yet. They get added in T11 if the claude.ai connector needs
+# them.
+
+trescomas.musasouled.com {
+    # Same compression policy as Anton. SSE (text/event-stream) is deliberately
+    # excluded so streamed responses are not buffered.
+    encode {
+        zstd
+        gzip
+        match {
+            header Content-Type text/html*
+            header Content-Type text/css*
+            header Content-Type text/plain*
+            header Content-Type text/javascript*
+            header Content-Type application/javascript*
+            header Content-Type application/json*
+            header Content-Type application/manifest+json*
+            header Content-Type image/svg+xml*
+        }
+    }
+
+    log {
+        output file /var/log/caddy/trescomas-access.log {
+            roll_size 50mb
+            roll_keep 7
+        }
+        format filter {
+            wrap json
+            fields {
+                uri delete
+                request>uri delete
+                request>headers>Authorization delete
+                request>headers>Cookie delete
+            }
+        }
+    }
+
+    # Backend paths. Each has its own auth (session cookie or bearer token).
+    # They must reach the backend, not the static handler.
+    @backend {
+        path /api /api/* /mcp /mcp/* /health
+    }
+    handle @backend {
+        reverse_proxy localhost:8001 {
+            flush_interval -1
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Everything else is the SPA. The public bundle holds no secret; the login
+    # view and httpOnly session cookie are the gate.
+    handle {
+        root * /var/www/tres-comas
+        try_files {path} /index.html
+        file_server
+    }
+
+    # The service worker script must always be revalidated so new deploys
+    # propagate.
+    @sw path /sw.js /registerSW.js /workbox-*.js
+    header @sw Cache-Control "no-cache"
+
+    # Web manifest needs the correct content type for install.
+    @manifest path /manifest.webmanifest
+    header @manifest Content-Type "application/manifest+json"
+
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Report-only first. Switch the header name to Content-Security-Policy after
+    # a clean week. No external hosts: the app serves its own fonts and assets.
+    # noindex because this is a private ledger.
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        X-Robots-Tag "noindex, nofollow"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        Content-Security-Policy-Report-Only "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'"
+    }
+}

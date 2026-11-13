@@ -1,0 +1,177 @@
+# CI + deploy — the AGENTS.md §10 bar that a machine can check: backend suite
+# green, guard-hook tests green, `vite build` clean. On push to main, once all
+# three gates pass, the exact tested build is deployed to the Hetzner box.
+#
+# No path filters on purpose: if these become required checks, a filtered
+# workflow never reports on docs-only PRs and leaves them pending forever.
+# The whole run is short enough to always run every gate.
+#
+# Deploy secrets (repository or `production` environment secrets):
+#   HETZNER_HOST         hostname or IP of the box
+#   HETZNER_USER         ssh user
+#   HETZNER_SSH_KEY      private key for that user
+#   HETZNER_KNOWN_HOSTS  pinned output of `ssh-keyscan <host>`
+#
+# INV-3: the production `.env` lives only on the box at /opt/tres-comas/.env.
+# This workflow never reads, writes or transmits it.
+#
+# One-time box setup is manual (clone to /opt/tres-comas, create .env from
+# deploy/.env.production.example, add the Caddy site block, create
+# /var/www/tres-comas) and is documented in docs/architecture.md.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"  # matches the Dockerfile
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      # No .env in CI: tests never depend on a local .env or the network.
+      - run: python -m pytest -q
+
+  hooks:
+    name: guard hooks (unittest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m unittest discover -s .claude/hooks -p 'test_*.py'
+
+  frontend:
+    name: frontend (vite build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      # Deploy reuses this exact tested build rather than rebuilding.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy:
+    name: deploy (hetzner)
+    needs: [backend, hooks, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      # Secrets are passed only through `env:`, never interpolated into scripts.
+      # Skip cleanly while the box is not set up yet, so early pushes stay green.
+      - name: Check deploy secrets
+        id: gate
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+        run: |
+          if [ -z "$HETZNER_HOST" ]; then
+            echo "::warning::Deploy secrets are not configured yet (HETZNER_HOST is empty); skipping deploy."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download frontend build
+        if: steps.gate.outputs.configured == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Set up ssh
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host deploy-target
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Copy SPA
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete \
+            -e "ssh -i $HOME/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" \
+            dist/ "$HETZNER_USER@$HETZNER_HOST:/var/www/tres-comas/"
+
+      - name: Deploy backend
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          # The SHA is passed as a quoted argument to the remote script.
+          ssh -i "$HOME/.ssh/id_deploy" -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+              "$HETZNER_USER@$HETZNER_HOST" bash -s -- "$GITHUB_SHA" <<'REMOTE'
+          set -euo pipefail
+          sha="$1"
+          cd /opt/tres-comas
+          git fetch origin main
+          # Move the checkout to the exact commit being deployed.
+          git checkout --detach "$sha"
+          docker compose up -d --build
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8001/health >/dev/null; then
+              echo "health check passed"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health check failed after ~60s" >&2
+          docker compose ps >&2 || true
+          exit 1
+          REMOTE

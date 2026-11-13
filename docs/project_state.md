@@ -4,7 +4,7 @@
 
 ## 1. One-line state
 
-Pre-build. The v1 spec, docs spine and agent guardrails are in the repo; no application code exists.
+T1 done: backend and frontend skeletons, Compose, Caddy template, CI and the push-to-main deploy job. No domain code yet; T2 (schema) is next.
 
 ## 2. Status
 
@@ -14,20 +14,23 @@ Pre-build. The v1 spec, docs spine and agent guardrails are in the repo; no appl
 | Docs spine | Done (AGENTS.md, invariants, decisions, architecture, roadmap, changelog, handover template) |
 | Guardrails | `.claude/hooks/pre_guard.py` wired in `.claude/settings.json`, with unit tests |
 | Skills | Project skills in `.claude/skills/` |
-| Code / CI / deploy | Not started (T1) |
-| Test suite | Hook tests only; app suite starts in T1 |
+| Code / CI / deploy | Skeletons, CI and deploy job (T1). Deploy skips until the box is set up and secrets are added (architecture §10) |
+| Test suite | Backend 2 passed; hook tests 16 passed |
 
 ## 3. Shipped
 
-- 2026-11-13 — Spec committed; docs spine and guardrails (T1 docs portion).
+- 2026-11-13 — Spec committed; docs spine and guardrails.
+- 2026-11-13 — T1 scaffold, CI and deploy job.
 
 ## 4. Open questions and blockers
 
-- **P-2 Market-data provider** — still open in the spec. Musa wants Canadian-market providers considered first. Resolved by the D-14 spike before T7; does not block T1–T6.
-- **P-1, P-3, P-4, P-5** — proposals in `design_decisions.md` §C, each decided inside its task. P-5 (auth) needs Musa's confirmation.
+- **Docker image build unverified**: the build sandbox could not reach the Debian mirrors. The first deploy is the first real build.
+- **Backups**: encrypted off-box backups are not built yet. Needed before real data goes in.
+- **P-2 Market-data provider**: still open in the spec. Musa wants Canadian-market providers considered first. Resolved by the D-14 spike before T7; does not block T2–T6.
+- **P-1, P-3, P-4, P-5**: proposals in `design_decisions.md` §C, each decided inside its task. P-5 (auth) needs Musa's confirmation.
 
 ## 5. Next priorities
 
-1. **T1 scaffold** when Musa says go: backend/frontend skeleton, Docker Compose, pytest, CI, push-to-main deploy to Hetzner. Confirm deploy target details with Musa (auth-related / outward-facing).
-2. T2 schema, deciding P-1 (decimal storage).
-3. T3 position derivation (Complex — bigger model).
+1. **T2 schema** for the ten tables, deciding P-1 (decimal storage).
+2. T3 position derivation (Complex, so a bigger model).
+3. Musa: one-time box setup and GitHub deploy secrets (architecture §10); encrypted off-box backups before real data goes in.

@@ -20,11 +20,11 @@ Each feature is done when its acceptance check passes as a named test (or record
 
 ## 2. Build Plan
 
-Eleven tasks, each one subagent and one commit, run through `/orchestrate`. **Not started** — build begins only when Musa says go.
+Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1 done; T2 next.
 
 | Task | What | Size | Depends on | Invariants touched | Status |
 | --- | --- | --- | --- | --- | --- |
-| T1 | Repo scaffold, Docker Compose, test runner, CI, push-to-main deploy; docs spine (done early, 2026-11-13) | Small | — | INV-3 | Docs spine done; scaffold not started |
+| T1 | Repo scaffold, Docker Compose, test runner, CI, push-to-main deploy; docs spine (done early, 2026-11-13) | Small | — | INV-3 | Done 2026-11-13 (box setup pending) |
 | T2 | Schema and migrations for the ten tables (decide P-1) | Small | T1 | INV-2, INV-8, INV-9 | Not started |
 | T3 | Position derivation, tests for buys, sells, splits, voids, fractional shares (decide P-4) | Complex | T2 | INV-2, INV-9 | Not started |
 | T4 | Auth, account CRUD, manual transaction form (F1) (confirm P-5 with Musa) | Medium | T3 | INV-2, INV-3, INV-8 | Not started |

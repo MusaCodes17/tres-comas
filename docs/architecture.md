@@ -118,3 +118,21 @@ Ten tables. The ledger is `account`, `security`, `transaction`; the rest is mark
 | Bank of Canada Valet | market_data (FX) | outbound | none | Decided (D-13) |
 | Anthropic API | llm | outbound | `ANTHROPIC_API_KEY` | Decided (D-4), not in v1 build plan |
 | Claude MCP client | mcp_client | inbound | app-issued token | T11 |
+
+## 10. Deployment (T1)
+
+**Pipeline** (`.github/workflows/ci.yml`): every PR and push to `main` runs three gates: backend pytest (Python 3.11), guard-hook unittests, `vite build`. On a push to `main` with all three green, the `deploy` job (GitHub environment `production`) copies the tested `frontend/dist` to `/var/www/tres-comas/` with rsync. It then SSHes in, moves `/opt/tres-comas` to the exact commit, runs `docker compose up -d --build` and polls `http://127.0.0.1:8001/health` for about 60 s. Until the deploy secrets exist, the job logs a warning and skips, so `main` stays green.
+
+**Secrets (GitHub):** `HETZNER_HOST`, `HETZNER_USER`, `HETZNER_SSH_KEY` (a deploy-only key) and `HETZNER_KNOWN_HOSTS` (pinned `ssh-keyscan` output; host keys are never accepted on first use). They reach steps only through `env:`.
+
+**Runtime:** Compose service `tres-comas`, container port 8000 published on `127.0.0.1:8001` only (Anton holds 8000). SQLite lives at `/data/tres_comas.db`, mapped to `$TRES_COMAS_DATA_DIR` (default `~/tres-comas-data`). `entrypoint.sh` runs `alembic upgrade head`, then one Uvicorn worker with proxy headers. Caddy terminates TLS for `trescomas.musasouled.com`: `/api`, `/mcp` and `/health` go to the backend, and everything else is the SPA.
+
+**One-time box setup (manual, Musa):**
+1. DNS: an `A`/`AAAA` record for `trescomas.musasouled.com` pointing at the box.
+2. A deploy user that can run `docker compose` without sudo and can write to `/opt/tres-comas` and `/var/www/tres-comas`, with the deploy public key in its `authorized_keys`.
+3. Clone the repo to `/opt/tres-comas`. A private repo needs a read-only deploy key on the box.
+4. Copy `deploy/.env.production.example` to `/opt/tres-comas/.env` and fill in the values by hand (INV-3). Create `~/tres-comas-data` and `/var/www/tres-comas`.
+5. Append `deploy/Caddyfile` to `/etc/caddy/Caddyfile` beside Anton's block and reload Caddy.
+6. Add the four GitHub secrets. The next push to `main` deploys.
+
+**Not yet built:** encrypted off-box backups (spec §Protecting the data at rest). They're needed before real data goes in.

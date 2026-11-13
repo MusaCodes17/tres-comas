@@ -1,0 +1,40 @@
+# Tres Comas compose file: one service, beside Anton on the Hetzner box.
+#
+# Usage (production, on the box, from /opt/tres-comas):
+#   docker compose up -d --build
+#
+# Usage (dev): docker compose up --build
+# The config comes from ./.env when it exists; without it the service still
+# starts with the defaults below (CI and dev).
+#
+# The database lives at /data/tres_comas.db inside the container, which maps to
+# $TRES_COMAS_DATA_DIR on the host (default ~/tres-comas-data). SQLite must stay
+# on a local disk; network filesystems cause corruption.
+services:
+  tres-comas:
+    build:
+      context: ./backend
+    image: tres-comas-backend:latest
+    ports:
+      # Loopback only: Caddy fronts this port. 8001 because Anton holds 8000.
+      # Never bind to 0.0.0.0.
+      - "127.0.0.1:8001:8000"
+    volumes:
+      # SQLite on local disk only.
+      - ${TRES_COMAS_DATA_DIR:-${HOME}/tres-comas-data}:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/tres_comas.db
+      - TZ=America/Toronto
+    env_file:
+      # The production .env at the repo root on the box is the single source of
+      # config and secrets (INV-3). It is never committed. It is absent in CI and
+      # dev, so required: false.
+      - path: ./.env
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

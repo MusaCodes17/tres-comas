@@ -4,6 +4,25 @@
 
 ---
 
+## T1: repo scaffold, CI and push-to-main deploy — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: four workers in parallel, each diff reviewed before acceptance (one was sent back for a wrong comment). Musa confirmed the plan, the domain `trescomas.musasouled.com` and deploying with a GitHub Action over SSH.
+
+**[ADDED]**
+- `backend/`: FastAPI app with a public `GET /health`, SQLAlchemy engine/session/`Base`, empty Alembic (batch mode), `run.py` (dev, port 8001), pytest with a temp DB set in `conftest.py`, `.env.example`, Dockerfile (python:3.11-slim-bookworm) and `entrypoint.sh` (migrate, then one Uvicorn worker with proxy headers).
+- `frontend/`: Vite + React 18 + Tailwind + React Query PWA skeleton with a manifest, service worker and a backend-health status line. Dev port 5174.
+- `docker-compose.yml` (service `tres-comas`, `127.0.0.1:8001`, data volume, optional root `.env`), `deploy/Caddyfile` site block, `deploy/.env.production.example` (key names only).
+- `.github/workflows/ci.yml`: backend pytest, hook unittests, vite build, and a `deploy` job on push to `main`.
+- `docs/architecture.md` §10: deployment and the one-time box setup.
+
+**[BLOCKED]** Encrypted off-box backups are not built yet. They're required before real data goes in.
+
+**[VERIFIED]** Backend 2 passed (Python 3.13 locally; CI runs 3.11). Hook tests 16 passed. `vite build` is clean and emits `manifest.webmanifest` and `sw.js`. `docker compose config` is valid. actionlint is clean. The entrypoint's commands (`alembic upgrade head`, then Uvicorn with the same flags) served `{"status":"ok"}` on 8001. **Not verified:** `docker build`, because this sandbox cannot resolve the Debian mirrors so the `apt-get` step could not run; and the deploy job end to end, because there are no box secrets yet. The first deploy is the first real image build.
+
+**Note:** the guard's `.env` read rule also fires on shell text that merely names a `.env` path (seen when writing these docs through a heredoc). It is harmless, and file-tool edits are unaffected.
+
+---
+
 ## Project spine: spec, docs, guardrails and skills — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. The repo was empty. This session committed the v1 spec and set up the working structure, following Anton's conventions. **No build-plan task was executed**: there is no application code, Compose file or CI yet.
