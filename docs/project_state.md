@@ -4,7 +4,7 @@
 
 ## 1. One-line state
 
-T1–T4 and T6 done: scaffold, CI and deploy, schema, ledger and positions, F1 manual entry in the API and PWA, and the connection registry with its logged outbound choke point. T5 (Wealthsimple import) waits on the export header; the D-14 provider spike is unblocked.
+T1–T4 and T6 done: scaffold, CI and deploy, schema, ledger and positions, F1 manual entry in the API and PWA, and the connection registry with its logged outbound choke point. T5 (Wealthsimple import) waits on the export header. The D-14 provider spike is parked: desk research done (`docs/spikes/price_provider.md`), live probe of EODHD and FMP to be run by Musa locally.
 
 ## 2. Status
 
@@ -34,7 +34,7 @@ T1–T4 and T6 done: scaffold, CI and deploy, schema, ledger and positions, F1 m
 
 - **Docker image build unverified**: the build sandbox could not reach the Debian mirrors. The first deploy is the first real build.
 - **Backups**: encrypted off-box backups are not built yet. Needed before real data goes in.
-- **P-2 Market-data provider**: still open in the spec. Musa wants Canadian-market providers considered first. Resolved by the D-14 spike before T7; does not block T4–T6.
+- **P-2 Market-data provider**: still open in the spec. Musa wants Canadian-market providers considered first. Desk research done; EODHD and FMP shortlisted. Live probe parked until Musa runs it locally (EODHD's key goes in the query string, which the cloud credential store can't inject). Blocks T7.
 - **T5 needs the Wealthsimple activity export's header row** (column names only) plus a described buy, sell and dividend row with changed numbers, and whether USD trades show USD or CAD amounts (D-22).
 - **Login on the box**: `TRES_COMAS_PASSWORD_HASH` must be added to the production `.env` (architecture §10 step 4) or login answers 503.
 - **T5 check (D-22)**: confirm what currency Wealthsimple reports for USD-stock trades in the TFSA before importing.
@@ -42,5 +42,5 @@ T1–T4 and T6 done: scaffold, CI and deploy, schema, ledger and positions, F1 m
 ## 5. Next priorities
 
 1. **T5 Wealthsimple activity import** (Medium; dedup decided as D-29) as soon as Musa shares the header row.
-2. **D-14 provider spike** (decide P-2; Canadian providers first), then T7 prices and FX. The spike sends tickers only through a temporary registry row.
+2. **D-14 provider spike, phase 2** (parked): build the probe script, then Musa runs it locally against EODHD and FMP and P-2 is decided; then T7 prices and FX.
 3. Musa: one-time box setup and GitHub deploy secrets (architecture §10); encrypted off-box backups before real data goes in.

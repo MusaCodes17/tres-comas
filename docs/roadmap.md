@@ -20,7 +20,7 @@ Each feature is done when its acceptance check passes as a named test (or record
 
 ## 2. Build Plan
 
-Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1–T4 and T6 done; T5 waits on the export header, and the D-14 spike is unblocked.
+Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1–T4 and T6 done; T5 waits on the export header; the D-14 spike is parked after desk research until Musa runs the live probe locally.
 
 | Task | What | Size | Depends on | Invariants touched | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -30,7 +30,7 @@ Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1�
 | T4 | Auth, account CRUD, manual transaction form (F1) (decided D-23–D-25) | Medium | T3 | INV-2, INV-3, INV-6, INV-8, INV-9 | Done 2026-11-13 |
 | T5 | Importer interface + Wealthsimple activity adapter with dedup (F2) (P-3 decided as D-29; needs the export header) | Medium | T3 | INV-1, INV-2, INV-8, INV-9 | Not started |
 | T6 | Connection registry and outbound log (decided D-26–D-28) | Small | T2 | INV-1, INV-3, INV-4, INV-7 | Done 2026-11-13 |
-| — | **Spike (D-14):** 2–3 price providers vs nine tickers + three funds of funds (decide P-2) | Small | T6 | INV-4 | Not started |
+| — | **Spike (D-14):** 2–3 price providers vs nine tickers + three funds of funds (decide P-2) | Small | T6 | INV-4 | Parked: phase 1 done (EODHD, FMP shortlisted); local probe pending |
 | T7 | Price and FX poller on a schedule, through the registry (F3) | Medium | T6, spike | INV-4, INV-7, INV-9 | Not started |
 | T8 | ETF constituent loader and two-level look-through (F4) | Complex | T7 | INV-4, INV-9 | Not started |
 | T9 | Exposure and portfolio views | Medium | T8 | INV-2, INV-9 | Not started |

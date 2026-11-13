@@ -4,6 +4,17 @@
 
 ---
 
+## Spike D-14 phase 1: price provider desk research (parked) — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. One worker (sonnet/medium) wrote the shortlist; reviewed and committed as `spike:`.
+
+- [ADDED] `docs/spikes/price_provider.md`: Canadian sources first (no retail API: TMX by contract, QuoteMedia by developer agreement), then EODHD, Twelve Data, FMP, Alpha Vantage, Finnhub. Recommends EODHD and FMP for live testing; issuer files stay the holdings fallback (D-8).
+- [CHANGED] Environment: a personal `tres-comas` cloud environment allowing `eodhd.com` and `financialmodelingprep.com` (Musa approved). No secrets saved.
+- [BLOCKED] Phase 2 live probe. EODHD takes its key only as a query parameter, which the cloud credential store can't inject. Musa will run the probe locally and chose to park it. P-2 stays open; T7 waits.
+- [VERIFIED] Docs only; no code changed. Research came from search summaries because provider pages were blocked at the time; claims are labelled and unconfirmed items listed.
+
+---
+
 ## T6: connection registry and outbound log — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate` in three parts: T6a (sonnet/high) built the registry and `call()`, T6b (haiku/medium) the REST API, and T6c (haiku/medium) the Connections screen. Every diff was reviewed.

@@ -1,6 +1,6 @@
 # D-14 spike: price and ETF-holdings provider (P-2)
 
-**Status:** In flight. Phase 1 (desk research) done; phase 2 (live probe) pending.
+**Status:** Parked (2026-11-13). Phase 1 (desk research) done. Phase 2 (live probe) chosen for **EODHD and FMP** only, and parked until Musa can run it locally (see "Phase 2: how it will run").
 **Date checked:** 2026-11-13. Prices change; re-check the live page before paying.
 
 **Method and limits.** Desk research by web search. Fetching the providers' own pages (eodhd.com, twelvedata.com, financialmodelingprep.com, alphavantage.co) was blocked in the research environment (hosts not on the network allowlist), so every claim below comes from search-result summaries of the official pages or from third-party pages, and is labelled. Anything not seen on an official page is marked **unconfirmed**. Phase 2 and a manual read of each pricing page must settle these before any money is spent.
@@ -112,7 +112,14 @@ Not shortlisted: TMX (no retail API), QuoteMedia (send one email asking for deve
 
 **Holdings fallback (D-8).** If no provider returns usable fund-of-fund holdings (VGRO, XEQT, XGRO to underlying ETFs, and those to securities, weights summing to 100% with "other" remainder), use issuer files uploaded by hand: Vanguard Canada and BlackRock iShares Canada publish holdings files per fund. Prices alone would then come from the cheapest provider that passes the price probe. Issuer file URLs and formats are not researched yet.
 
-## Phase 2 plan (stub)
+## Phase 2: how it will run (decided 2026-11-13)
+
+- **Providers:** EODHD and Financial Modeling Prep (Musa's pick). Twelve Data and Finnhub are not probed unless both disappoint.
+- **Where:** on Musa's own machine, not in a cloud session. EODHD takes its key only as `?api_token=` in the query string (confirmed on eodhd.com's EOD API page), and the cloud session's credential store can inject keys only as headers. Musa sets `EODHD_API_KEY` and `FMP_API_KEY` in a local shell, runs the probe, and pastes back the coverage table. Keys never enter the repo, the chat or a cloud container (INV-3).
+- **Still to build when unparked:** a small probe script that seeds two disabled registry rows in a throwaway SQLite file, enables them, sends requests only through `connections.call()` (query-param auth is already supported), and prints a coverage table with no key values. It can be built and tested with a faked transport before Musa's run.
+- **Cloud environment:** a personal `tres-comas` environment now allows `eodhd.com` and `financialmodelingprep.com`, so public docs pages can be read from cloud sessions. No secrets are stored on it.
+
+## Phase 2 plan (detail)
 
 - Temporary registry row per provider, kind `market_data`, created **disabled**; Musa enables it for the probe and removes it after. Key name goes in `deploy/.env.production.example`; value only on the box (INV-3).
 - Through `connections.call()` only (INV-7): the nine tickers (provider's TSX convention), then holdings requests for VGRO, XEQT, XGRO and their underlying ETFs (VUN, VCN, XUS, ITOT and whatever the first level returns). Payload: tickers, dates, key only (INV-4). Registry must support the provider's auth style (query param or header).
