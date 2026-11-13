@@ -20,13 +20,13 @@ Each feature is done when its acceptance check passes as a named test (or record
 
 ## 2. Build Plan
 
-Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1 and T2 done; T3 next (T6 is also unblocked).
+Eleven tasks, each one subagent and one commit, run through `/orchestrate`. T1–T3 done; T4, T5 and T6 are unblocked.
 
 | Task | What | Size | Depends on | Invariants touched | Status |
 | --- | --- | --- | --- | --- | --- |
 | T1 | Repo scaffold, Docker Compose, test runner, CI, push-to-main deploy; docs spine (done early, 2026-11-13) | Small | — | INV-3 | Done 2026-11-13 (box setup pending) |
 | T2 | Schema and migrations for the ten tables (decided D-15–D-18) | Small | T1 | INV-2, INV-8, INV-9 | Done 2026-11-13 |
-| T3 | Position derivation, tests for buys, sells, splits, voids, fractional shares (decide P-4) | Complex | T2 | INV-2, INV-9 | Not started |
+| T3 | Position derivation and the ledger write path, tests for buys, sells, splits, voids, fractional shares (decided D-19–D-22) | Complex | T2 | INV-2, INV-9 | Done 2026-11-13 |
 | T4 | Auth, account CRUD, manual transaction form (F1) (confirm P-5 with Musa) | Medium | T3 | INV-2, INV-3, INV-8 | Not started |
 | T5 | Importer interface + Wealthsimple activity adapter with dedup (F2) (decide P-3) | Medium | T3 | INV-1, INV-2, INV-8, INV-9 | Not started |
 | T6 | Connection registry and outbound log | Small | T2 | INV-3, INV-4, INV-7 | Not started |

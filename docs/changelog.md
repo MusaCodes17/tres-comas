@@ -4,6 +4,20 @@
 
 ---
 
+## T3: ledger write path and position derivation — 2026-11-13
+
+Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: T3a (sonnet/high) wrote position derivation and T3b (sonnet/high) the ledger writer. Both diffs were reviewed and accepted first time, and an invariant review was run on the task. Musa decided P-4 (weighted average cost), that oversells are refused at write time, and that positions cover securities only in v1.
+
+**[ADDED]**
+- `app/services/positions.py`: `Position`, pure `derive()`, `get_positions`, `get_position`. Exact Decimal arithmetic at precision 34 with no rounding; proportional cost removal on sells; splits scale quantity only (D-19).
+- `app/services/ledger.py`: `record_transaction`, `void_transaction`, `void_and_replace`. Per-type validation, float/bool/NaN refused, currency must match the security, source/batch/proposal pairing, and the never-negative replay before any write (D-20). Flushes and never commits.
+- `tests/conftest.py`: a `session` fixture on a freshly migrated temp DB. Also `tests/test_positions.py` and `tests/test_ledger.py`, including the F1 nine-position check on synthetic quantities.
+- Decisions D-19 to D-22; P-4 retired.
+
+**[VERIFIED]** Backend suite 166 passed (was 34); hook tests 16 passed. New invariant tests: `test_inv2_positions_rebuild_from_transactions`, `test_inv2_ledger_is_sole_transaction_writer`, `test_inv9_ledger_rejects_float` / `_bool` / `_non_finite`. Invariant review: INV-2 and INV-9 pass. INV-6 holds because `source="proposal"` needs a real proposal row and only app code calls the ledger. The rest are not touched.
+
+---
+
 ## T2: schema and migrations for the ten tables — 2026-11-13
 
 Branch `claude/nice-darwin-p5e56r`. Ran via `/orchestrate`: T2a (haiku/medium) built the decimal type, T2b (sonnet/medium) the models, migration and tests, and a haiku/low worker fixed comments. Every diff was reviewed, and an invariant review was run on the whole task. Musa decided the three open choices: exact-text decimals, append-only enforced in the database, and connections off by default.

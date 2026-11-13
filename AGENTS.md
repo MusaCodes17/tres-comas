@@ -2,7 +2,7 @@
 
 **Reference docs** (`docs/`): `v1_spec.md` (the source of truth for v1 scope), `invariants.md` (the nine rules, with owning code and guards), `design_decisions.md` (constraints C-*, decisions D-*, pending P-*), `architecture.md`, `roadmap.md` (features, build plan T1–T11, releases R2–R5), `project_state.md` (what's true now), `changelog.md` (session history; append an entry at the top after every working session), `handover_template.md`. This file is the *stable* guide; the changelog is the *running* history.
 
-**Status:** pre-build. Only the docs spine and agent guardrails exist. No code until T1 is started on purpose (see `docs/roadmap.md` §2).
+**Status:** building v1. T1–T3 done (scaffold, schema, ledger write path and positions); see `docs/project_state.md` for what is true now.
 
 ---
 

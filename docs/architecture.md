@@ -78,8 +78,8 @@ Enums and currency codes are CHECK constraints, and `fx_rates.pair` must match `
 
 | Service | Job | Task |
 | --- | --- | --- |
-| `ledger` | Validate and record transactions; void and replace. Sole writer. | T3/T4 |
-| `positions` | Derive quantity + average cost per account × security from non-voided transactions, in date order. | T3 |
+| `ledger` | Validate and record transactions; void and replace. Sole writer; refuses changes that would go negative (D-20). Built: `record_transaction`, `void_transaction`, `void_and_replace`. | T3 |
+| `positions` | Derive quantity, total cost, average cost and realised gain per account × security from non-voided transactions, in (trade_date, id) order (D-19). Built: `derive`, `get_positions`, `get_position`. | T3 |
 | `importers.*` | Parse a broker file into normalized rows; never write. `wealthsimple` first. | T5, T10 |
 | `connections` | Registry CRUD, enabled/scope checks, outbound HTTP, `outbound_log`. | T6 |
 | `market_data` | Scheduled price + FX poll through `connections`. | T7 |
